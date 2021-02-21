@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p class="decode-result">Last result: <b>{{ result }}</b></p>
+    <!-- <p class="decode-result">Last result: <b>{{ result }}</b></p> -->
 
     <qrcode-stream :camera="camera" @decode="onDecode" @init="onInit">
       <div v-if="validationSuccess" class="validation-success">
@@ -67,8 +67,9 @@ export default {
       this.turnCameraOff()
 
       // pretend it's taking really long
-      await this.timeout(3000)
+      await this.timeout(100)
       this.isValid = content.startsWith('http')
+      this.$emit('result', content);
 
       // some more delay, so users have time to read the message
       await this.timeout(2000)
@@ -91,7 +92,7 @@ export default {
     }
   },
   created() {
-    alert('comp created')
+    //alert('comp created')
   }
 }
 </script>

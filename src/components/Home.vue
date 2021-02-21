@@ -15,29 +15,30 @@
                         class="text-center display-1 mb-10"
                         :class="`${bgColor}--text`"
                       >
-                        Парикмахер Ссылок
+                        Qr Scanner App
                       </h1>
                       <v-text-field
-                        id="url"
-                        v-model="url"
-                        label="Присаживайтесь"
-                        name="url"
+                        id="qty"
+                        v-model="qty"
+                        label=" "
+                        name="qty"
                         append-icon="mdi-scissors-cutting"
-                        type="text"
+                        
                         :color="bgColor"
                       />
                       <FormInlineMessage
-                        v-if="$v.url.$error"
+                        v-if="$v.qty.$error"
+                        name="inline-message"
                       >
                       
-                        заполните поле. Минимум три знака
+                        Enter Quantity
                       </FormInlineMessage>
                       <div class="text-danger" v-if="serverErrors.has('url')">
-                          Ответ с сервера : {{ serverErrors.errors.url[0] }}
+                         Server response : {{ serverErrors.errors.url[0] }}
                       </div>
                       <div class="text-center mt-6">
                         <v-btn type="submit" large :color="bgColor" dark
-                          >подстричь</v-btn
+                          >Submit</v-btn
                         >
                       </div>
                      
@@ -58,10 +59,14 @@
                         color="white"
                       >
                         <h5 class="text-center overline mb-3">
-                        ван момент плиз...
+                        waiting...
                       </h5>
-
                       </v-progress-circular>
+                      <h5 
+                        v-else 
+                        class="text-center overline mb-3"
+
+                      >Please enter Quantity</h5>
                     </v-card-text>                    
                   </div>                             
 
@@ -79,36 +84,17 @@
                 >
                   <div>
                     
-                    <div class="text-center mb-6">
-                      <v-btn dark outlined @click="back">давай еще</v-btn>
+                    <div class="text-center mb-6 mt-6">
+                      <v-btn dark outlined @click="back">Enter more</v-btn>
                     </div>
                   </div>
                 </v-col>
-                <v-col cols="12" md="8" class=" pt-6 pb-6">
-
-
-
+                <v-col cols="12" md="8">
                   <QrReader
                     v-if="onQr"
-                  ></QrReader>
-
-
-
-
-
-
-
-
-
-                  <!-- <v-card-text>
-                    
-                    <h4
-                        class="text-center display-0 mb-10"
-                        :class="`${bgColor}--text`"
-                      >
-                        <a href="/">{{shortUrl}}</a>
-                      </h4>
-                  </v-card-text> -->
+                    class="pr-6 pl-6 pt-6 pb-6" 
+                    v-on:result="sendToServer"
+                  ></QrReader>                  
                 </v-col>
                  
               </v-row>
@@ -126,16 +112,18 @@
 <script>
   import axios from 'axios';
   import { validationMixin } from 'vuelidate';
-  import { required } from 'vuelidate/lib/validators';
+  import { required, decimal, integer, alpha } from 'vuelidate/lib/validators';
   import { minLength } from 'vuelidate/lib/validators';
   import { Errors } from 'form-backend-validation';
 
   import QrReader from './QrReader.vue';
+  import FormInlineMessage from './FormInlineMessage';
 
   export default {
   name: 'Home',
   components: {
-    QrReader
+    QrReader,
+    FormInlineMessage
   },
   mixins: [validationMixin],
   
@@ -158,41 +146,45 @@
     url:'',
     serverErrors: new Errors(),    
     isLoading:false,
-    shortUrl:null, 
+    qty:0, 
     componentKey: 0,
     onQr: true,
      
   }),
   validations: {
-    url: {
+    qty: {
       required,
-      minLength: minLength(3)      
+      decimal
+        
     },    
   },
   methods: {    
     back() {
       this.step = 1
       this.serverErrors = new Errors();
-      this.shortUrl = null;
+      this.qty = 0.00;
       this.onQr = false;
+    },
+    sendToServer(url) {
+      var that = this;
+      axios.post(url, {qty:this.qty.value}).then(response => {                
+                     
+      }).catch((error) => {          
+          that.serverErrors = new Errors(error.response.data.errors)         
+      });
+
     },
     generate(){
       this.onQr = true;
       var that = this;
       this.$v.$touch();
-      // if (this.$v.$error) return;    
+      if (this.$v.$error) return;    
       this.isLoading = true;
       
       setTimeout(function(){
-         axios.post('/', {url:this.url.value}).then(response => {               
-                that.shortUrl = response.data.url;                
-                that.isLoading = false; 
-                that.step = 2;     
-            }).catch((error) => {
-that.step = 2;                
-                that.serverErrors = new Errors(error.response.data.errors)
-                that.isLoading = false; 
-            });
+        
+            that.isLoading = false; 
+            that.step = 2; 
           
       }, 2000)              
     },
